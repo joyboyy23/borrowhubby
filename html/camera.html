@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student ID Capture</title>
+    <link rel="stylesheet" href="/css/camera.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Capture Student ID</h2>
+        <video id="video" autoplay></video>
+        <button id="capture">Capture</button>
+        <canvas id="canvas"></canvas>
+        <br>
+        <a href="borrow.html" id="save">Confirm</a>
+        <a href="borrow.html">Back</a>
+        <p id="message" style="color: red; display: none;">*PLEASE CAPTURE YOUR ID*</p>
+    </div>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const saveButton = document.getElementById('save');
+        const message = document.getElementById('message');
+        const context = canvas.getContext('2d');
+        let isCaptured = false;
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+            })
+            .catch(err => {
+                console.error("Error accessing webcam: ", err);
+            });
+
+        captureButton.addEventListener('click', () => {
+            canvas.width = 2.63 * 96; // Convert inches to pixels (assuming 96 DPI)
+            canvas.height = 3.88 * 96;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            isCaptured = true;
+            message.style.display = 'none';
+        });
+
+        saveButton.addEventListener('click', (event) => {
+            if (!isCaptured) {
+                event.preventDefault();
+                message.style.display = 'block';
+            } else {
+                const image = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = 'student_id.png';
+                link.click();
+                window.location.href='borrow.html';
+            }
+        });
+    </script>
+</body>
+</html>

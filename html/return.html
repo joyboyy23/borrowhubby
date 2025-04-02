@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Item</title>
+    <link rel="stylesheet" href="/css/return.css">
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <img src="/media/apple-touch-icon.png" alt="Logo" class="logo">
+            <h2>BorrowHub</h2>
+        </div>
+        
+        <div class="buttons-container">
+            <a href="/dashboard.html" class="btn">Dashboard</a>
+            <a href="manageItem.html" class="btn">Manage Item</a>
+            <a href="borrow.html" class="btn">Borrow</a>
+            <a href="return.html" class="btn">Return</a>    
+            <a href="history.html" class="btn">History</a>
+        </div>
+        
+        <h3>Return Items</h3>
+        <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Borrower</th>
+                <th>Contact</th>
+                <th>Due Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Laptop</td>
+                <td>John Doe</td>
+                <td>123-456-7890</td>
+                <td>2025-04-10</td>
+                <td><button class="return-btn" onclick="returnItem(this)">Return</button></td>
+            </tr>
+            <tr>
+                <td>Calculator</td>
+                <td>Jane Smith</td>
+                <td>987-654-3210</td>
+                <td>2025-04-15</td>
+                <td><button class="return-btn" onclick="returnItem(this)">Return</button></td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <script>
+        function returnItem(button) {
+            let row = button.parentElement.parentElement;
+            let itemName = row.cells[0].innerText;
+            
+            // Prompt the user with "OK" or "Put Back"
+            let action = confirm(`Are you sure you want to return the ${itemName}? Click OK to confirm or Cancel to put it back.`);
+    
+            if (action) {
+                // If the user clicks OK, remove the item
+                row.remove();
+                alert("Item returned successfully!");
+            } else {
+                // If the user clicks Cancel, "put back" the item (restore it)
+                alert("Item has been put back.");
+            }
+        }
+    </script>
+    </div>
+</body>
+</html>
