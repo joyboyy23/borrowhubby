@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Library System </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            overflow: hidden;
+        }
+        header {
+            background: #35424a;
+            color: #fff;
+            padding-top: 20px;
+            min-height: 70px;
+            border-bottom: 3px solid #e8491d;
+            text-align: center;
+        }
+        nav {
+            text-align: center;
+            padding: 15px;
+            background: #e8491d;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+        }
+        .section {
+            padding: 20px;
+            background: white;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            background: #35424a;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #e8491d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Library ni Awuu</h1>
+    </header>
+    <nav>
+        <a href="#search">Search Books</a>
+        <a href="#borrow">Borrow</a>
+        <a href="#return">Return</a>
+        <a href="#manage">Manage</a>
+    </nav>
+    <div class="container">
+        <div id="search" class="section">
+            <h2>Search Books</h2>
+            <input type="text" id="searchInput" placeholder="Enter book title...">
+            <button onclick="searchBook()">Search</button>
+        </div>
+        <div id="borrow" class="section">
+            <h2>Borrow a Book</h2>
+            <input type="text" id="borrowBook" placeholder="Enter book title">
+            <button onclick="borrowBook()">Borrow</button>
+        </div>
+        <div id="return" class="section">
+            <h2>Return a Book</h2>
+            <input type="text" id="returnBook" placeholder="Enter book title">
+            <button onclick="returnBook()">Return</button>
+        </div>
+        <div id="manage" class="section">
+            <h2>Manage Library</h2>
+            <button onclick="manageLibrary()">Open Management</button>
+        </div>
+    </div>
+    <script>
+        function searchBook() {
+            let book = document.getElementById("searchInput").value;
+            alert("Searching for: " + book);
+            
+        }
+        function borrowBook() {
+            let book = document.getElementById("borrowBook").value;
+            alert("You borrowed: " + book);
+        }
+        function returnBook() {
+            let book = document.getElementById("returnBook").value;
+            alert("You returned: " + book);
+        }
+        function manageLibrary() {
+            alert("Opening management system...");
+        }
+    </script>
+</body>
+</html>
