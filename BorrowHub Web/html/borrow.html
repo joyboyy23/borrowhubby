@@ -1,0 +1,91 @@
+<!-- borrow.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Borrow</title>
+    <link rel="stylesheet" href="../css/borrow.css">
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <img src="../media/apple-touch-icon.png" alt="Logo" class="logo">
+            <h2>BorrowHub</h2>
+        </div>
+        
+        <div class="buttons-container">
+            <a href="../dashboard.html" class="btn">Dashboard</a>
+            <a href="manageItem.html" class="btn">Manage Item</a>
+            <a href="borrow.html" class="btn">Borrow</a>
+            <a href="return.html" class="btn">Return</a>    
+            <a href="history.html" class="btn">History</a>
+        </div>
+        
+        <h3>Borrow Items</h3>
+        <a href="camera.html" class="button11">Capture Student ID</a>
+        
+        <input type="text" class="input11" placeholder="Student Name" id="studentName">
+        <input type="text" class="input11" placeholder="Contact Number" id="contactNumber">
+        
+        <select class="select" id="itemSelect">
+            <option>Select an item</option>
+            <!-- Dynamic options will be loaded here -->
+        </select>
+        
+        <input type="date" class="input11" id="borrowDate">
+        
+        <a class="button11" id="borrowBtn">Confirm Borrow</a>
+    </div>
+
+    <script>
+        // Load available items from localStorage
+        window.onload = function() {
+            const items = JSON.parse(localStorage.getItem('items')) || [];
+            const itemSelect = document.getElementById('itemSelect');
+            
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.innerText = item;
+                itemSelect.appendChild(option);
+            });
+        };
+
+        // Handle borrow action
+        document.getElementById('borrowBtn').addEventListener('click', function() {
+            const itemName = document.getElementById('itemSelect').value;
+            const studentName = document.getElementById('studentName').value;
+            const contactNumber = document.getElementById('contactNumber').value;
+            const borrowDate = document.getElementById('borrowDate').value;
+
+            if (!itemName || !studentName || !contactNumber || !borrowDate) {
+                alert('Please fill in all fields.');
+                return;
+            }
+
+            // Create a borrowed item object
+            const borrowedItem = {
+                itemName,
+                studentName,
+                contactNumber,
+                borrowDate
+            };
+
+            // Retrieve borrowed items from localStorage (or create an empty array if none)
+            const borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+            borrowedItems.push(borrowedItem);
+
+            // Save the updated list of borrowed items back to localStorage
+            localStorage.setItem('borrowedItems', JSON.stringify(borrowedItems));
+
+            alert(`Borrowed ${itemName} by ${studentName} (Contact: ${contactNumber})`);
+
+            // Optionally, clear the form fields after confirmation
+            document.getElementById('studentName').value = '';
+            document.getElementById('contactNumber').value = '';
+            document.getElementById('borrowDate').value = '';
+        });
+    </script>
+</body>
+</html>
