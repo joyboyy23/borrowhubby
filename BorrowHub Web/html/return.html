@@ -1,0 +1,93 @@
+<!-- return.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Item</title>
+    <link rel="stylesheet" href="../css/return.css">
+</head>
+<body>
+    <div class="container">
+        <div class="title-container">
+            <img src="../media/apple-touch-icon.png" alt="Logo" class="logo">
+            <h2>BorrowHub</h2>
+        </div>
+        
+        <div class="buttons-container">
+            <a href="../dashboard.html" class="btn">Dashboard</a>
+            <a href="manageItem.html" class="btn">Manage</a>
+            <a href="borrow.html" class="btn">Borrow</a>
+            <a href="return.html" class="btn">Return</a>    
+            <a href="history.html" class="btn">History</a>
+        </div>
+        
+        <h3>Return Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Borrower</th>
+                    <th>Contact</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="borrowedItemsList">
+                <!-- Borrowed items will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Load borrowed items from localStorage
+        window.onload = function() {
+            const borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+            const borrowedItemsList = document.getElementById('borrowedItemsList');
+
+            borrowedItems.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.itemName}</td>
+                    <td>${item.studentName}</td>
+                    <td>${item.contactNumber}</td>
+                    <td>${item.borrowDate}</td>
+                    <td><button class="return-btn" onclick="returnItem(this)">Return</button></td>
+                `;
+                borrowedItemsList.appendChild(row);
+            });
+        };
+
+        function returnItem(button) {
+            let row = button.parentElement.parentElement;
+            let itemName = row.cells[0].innerText;
+            
+            // Confirm return action
+            let action = confirm(`Are you sure you want to return the ${itemName}? Click OK to confirm or Cancel to put it back.`);
+
+            if (action) {
+                // Remove item from localStorage
+                let borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+                borrowedItems = borrowedItems.filter(item => item.itemName !== itemName);
+                localStorage.setItem('borrowedItems', JSON.stringify(borrowedItems));
+
+                // Remove the row from the table
+                row.remove();
+                alert("Item returned successfully!");
+            } else {
+                alert("Item has been put back.");
+            }
+        }
+         //buttons transition
+         const currentPage = window.location.pathname.split('/').pop(); 
+const navLinks = document.querySelectorAll('.buttons-container a');
+
+navLinks.forEach(link => {
+    const linkPage = link.getAttribute('href').split('/').pop();
+    if (linkPage === currentPage) {
+        link.classList.add('active');
+    }
+});
+    </script>
+</body>
+</html>
