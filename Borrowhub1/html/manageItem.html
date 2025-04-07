@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Items</title>
+    
+    <link rel="stylesheet" href="../css/manageItem.css">
+    <style>
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 5px;
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .item-image {
+            max-width: 100%;
+            max-height: 300px;
+            display: block;
+            margin: 10px auto;
+        }
+        
+        .no-image {
+            text-align: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+            margin: 10px 0;
+        }
+        
+        .action-buttons button {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        
+        /* Hide file input */
+        .file-upload {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="live-time" id="liveTime"></div>
+        <div class="title-container">
+            <img src="../media/apple-touch-icon.png" alt="Logo" class="logo">
+            <h2>BorrowHub</h2>
+        </div>
+        <div class="buttons-container">
+            <a href="../dashboard.html" class="btn">Dashboard</a>
+            <a href="manageItem.html" class="btn">Manage Item</a>
+            <a href="borrow.html" class="btn">Borrow</a>
+            <a href="return.html" class="btn">Return</a>
+            <a href="history.html" class="btn">History</a>
+        </div>
+        
+        <h3>Manage Items</h3>
+        
+        <form id="addItemForm">
+            <input type="text" id="itemName" placeholder="Enter Item Name" required>
+            <input type="number" id="itemQuantity" name="item_quantity" placeholder="Quantity" min="1" value="1" class="quantity-input">
+            <button type="submit">Add Item</button>
+        </form>
+
+        <h3>Inventory List</h3>
+        <div class="search-container">
+            <input type="text" id="itemSearch" placeholder="Search for items...">
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Quantity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="itemList">
+                <!-- Items will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Item View Modal -->
+    <div id="itemModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3 id="modalItemName"></h3>
+            <div id="modalItemImage" class="item-image-container">
+                <div class="no-image" id="noImageText">No image available</div>
+                <img id="itemImage" class="item-image" style="display: none;" alt="Item image">
+            </div>
+            <h4>Description:</h4>
+            <p id="modalItemDescription">No description available.</p>
+        </div>
+    </div>
+
+    <script>
+        const addItemForm = document.getElementById('addItemForm');
+        const itemList = document.getElementById('itemList');
+        const modal = document.getElementById('itemModal');
+
+            // Load saved items from localStorage
+        window.onload = function() {
+    const savedItems = JSON.parse(localStorage.getItem('items')) || [];
+    // Sort items by quantity (highest first)
+    savedItems.sort((a, b) => b.quantity - a.quantity);
+    savedItems.forEach(item => addItemToTable(item.name, item.quantity, item.description, item.imageData));
+};
+
+// Replace the existing addItemToTable function with this:
+function addItemToTable(itemName, quantity, description = '', imageData = null) {
+    const row = document.createElement('tr');
+    // Determine if we should highlight the view button
+    const viewBtnClass = imageData ? 'view-btn has-image' : 'view-btn';
+    
+    row.innerHTML = `
+        <td>${itemName}</td>
+        <td>${quantity}</td>
+        <td class="action-buttons">
+            <button class="${viewBtnClass}" onclick="viewItem('${itemName}')">👁️ View</button>
+            <button class="edit-btn" onclick="editItem(this)">✏️ Edit</button>
+            <button class="upload-btn" onclick="triggerFileUpload('${itemName}')">📷 Upload</button>
+            <input type="file" class="file-upload" id="upload-${itemName}" accept="image/*" onchange="handleFileUpload(this, '${itemName}')">
+            <button class="delete-btn" onclick="deleteItem(this)">🗑️ Delete</button>
+        </td>
+    `;
+    itemList.appendChild(row);
+}
+
+        addItemForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            const itemName = document.getElementById('itemName').value;
+            const itemQuantity = parseInt(document.getElementById('itemQuantity').value) || 1;
+            
+            if (itemName.trim() === '') return;
+
+            // Save item to localStorage
+            let items = JSON.parse(localStorage.getItem('items')) || [];
+            
+            // Check if item already exists
+            const existingItemIndex = items.findIndex(item => item.name === itemName);
+            
+            if (existingItemIndex !== -1) {
+                // Update quantity if item exists
+                items[existingItemIndex].quantity += itemQuantity;
+                
+                // Update the display
+                updateItemInTable(itemName, items[existingItemIndex].quantity);
+            } else {
+                // Add new item
+                items.push({ 
+                    name: itemName, 
+                    quantity: itemQuantity,
+                    description: '',
+                    imageData: null
+                });
+                
+                // Add to table
+                addItemToTable(itemName, itemQuantity, '', null);
+            }
+            
+            localStorage.setItem('items', JSON.stringify(items));
+            addItemForm.reset();
+
+            // Update dashboard if we're on the same domain
+            try {
+                if (window.parent && window.parent.updateDashboardStats) {
+                    window.parent.updateDashboardStats();
+                }
+            } catch (e) {
+                // Handle cross-origin issues silently
+            }
+        });
+
+        function addItemToTable(itemName, quantity, description = '', imageData = null) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${itemName}</td>
+                <td>${quantity}</td>
+                <td class="action-buttons">
+                    <button class="view-btn" onclick="viewItem('${itemName}')">👁️ View</button>
+                    <button class="edit-btn" onclick="editItem(this)">✏️ Edit</button>
+                    <button class="upload-btn" onclick="triggerFileUpload('${itemName}')">📷 Upload</button>
+                    <input type="file" class="file-upload" id="upload-${itemName}" accept="image/*" onchange="handleFileUpload(this, '${itemName}')">
+                    <button class="delete-btn" onclick="deleteItem(this)">🗑️ Delete</button>
+                </td>
+            `;
+            itemList.appendChild(row);
+        }
+        
+        function updateItemInTable(itemName, newQuantity) {
+            const rows = itemList.getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].cells[0].innerText === itemName) {
+                    rows[i].cells[1].innerText = newQuantity;
+                    break;
+                }
+            }
+        }
+
+        function editItem(button) {
+            const row = button.parentElement.parentElement;
+            const itemName = row.cells[0].innerText;
+            const currentQuantity = parseInt(row.cells[1].innerText);
+            
+            // Get current item data
+            let items = JSON.parse(localStorage.getItem('items')) || [];
+            const index = items.findIndex(item => item.name === itemName);
+            if (index === -1) return;
+            
+            const currentItem = items[index];
+            const currentDescription = currentItem.description || '';
+            
+            const newName = prompt('Edit item name:', itemName);
+            if (!newName) return;
+            
+            const newQuantity = parseInt(prompt('Edit quantity:', currentQuantity));
+            if (isNaN(newQuantity) || newQuantity < 1) return;
+            
+            const newDescription = prompt('Edit description:', currentDescription);
+            if (newDescription === null) return; // User cancelled
+            
+            // Update display
+            row.cells[0].innerText = newName;
+            row.cells[1].innerText = newQuantity;
+
+            // Update file input ID if name changed
+            if (newName !== itemName) {
+                const fileInput = row.querySelector('.file-upload');
+                fileInput.id = `upload-${newName}`;
+                
+                // Update onclick handlers
+                row.querySelector('.view-btn').setAttribute('onclick', `viewItem('${newName}')`);
+                row.querySelector('.upload-btn').setAttribute('onclick', `triggerFileUpload('${newName}')`);
+                fileInput.setAttribute('onchange', `handleFileUpload(this, '${newName}')`);
+            }
+
+            // Update in localStorage
+            if (index !== -1) {
+                items[index] = { 
+                    name: newName, 
+                    quantity: newQuantity,
+                    description: newDescription,
+                    imageData: currentItem.imageData
+                };
+                localStorage.setItem('items', JSON.stringify(items));
+            }
+        }
+
+        function deleteItem(button) {
+            if (confirm('Are you sure you want to delete this item?')) {
+                const row = button.parentElement.parentElement;
+                const itemName = row.cells[0].innerText;
+
+                // Remove item from localStorage
+                let items = JSON.parse(localStorage.getItem('items')) || [];
+                items = items.filter(item => item.name !== itemName);
+                localStorage.setItem('items', JSON.stringify(items));
+
+                row.remove();
+            }
+        }
+
+        function viewItem(itemName) {
+            // Get item data from localStorage
+            const items = JSON.parse(localStorage.getItem('items')) || [];
+            const item = items.find(item => item.name === itemName);
+            
+            if (!item) return;
+            
+            // Populate modal
+            document.getElementById('modalItemName').innerText = item.name;
+            document.getElementById('modalItemDescription').innerText = item.description || 'No description available.';
+            
+            const imageElement = document.getElementById('itemImage');
+            const noImageText = document.getElementById('noImageText');
+            
+            if (item.imageData) {
+                imageElement.src = item.imageData;
+                imageElement.style.display = 'block';
+                noImageText.style.display = 'none';
+            } else {
+                imageElement.style.display = 'none';
+                noImageText.style.display = 'block';
+            }
+            
+            // Display modal
+            modal.style.display = 'block';
+        }
+
+        function triggerFileUpload(itemName) {
+            document.getElementById(`upload-${itemName}`).click();
+        }
+
+        function handleFileUpload(input, itemName) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const imageData = e.target.result;
+                
+                // Update item in localStorage
+                let items = JSON.parse(localStorage.getItem('items')) || [];
+                const index = items.findIndex(item => item.name === itemName);
+                
+                if (index !== -1) {
+                    items[index].imageData = imageData;
+                    localStorage.setItem('items', JSON.stringify(items));
+                    alert('Image uploaded successfully!');
+                }
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        // Modal close button
+        document.querySelector('.close-modal').addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+
+        // Click outside modal to close
+        window.addEventListener('click', function(event) {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        // Live clock function
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            // Get date components
+            const day = now.getDate().toString().padStart(2, '0');
+            const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+            const year = now.getFullYear();
+            
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            const dateString = `${month}/${day}/${year}`;
+            
+            document.getElementById('liveTime').innerHTML = `${dateString}<br>${timeString}`;
+        }
+
+        // Update clock immediately and then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // Add item search functionality
+        document.getElementById('itemSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#itemList tr');
+            
+            rows.forEach(row => {
+                const itemName = row.cells[0].innerText.toLowerCase();
+                if (itemName.includes(searchTerm)) {
+                    row.style.display = '';
+                    if (searchTerm.length > 0) {
+                        // Highlight text
+                        const highlightedText = row.cells[0].innerText.replace(
+                            new RegExp(`(${searchTerm})`, 'gi'),
+                            '<span class="highlight">$1</span>'
+                        );
+                        row.cells[0].innerHTML = highlightedText;
+                    } else {
+                        // Reset highlighting
+                        row.cells[0].innerHTML = row.cells[0].innerText;
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        //buttons transition
+        const currentPage = window.location.pathname.split('/').pop(); 
+        const navLinks = document.querySelectorAll('.buttons-container a');
+
+        navLinks.forEach(link => {
+            const linkPage = link.getAttribute('href').split('/').pop();
+            if (linkPage === currentPage) {
+                link.classList.add('active');
+            }
+        });
+    </script>
+</body>
+</html>

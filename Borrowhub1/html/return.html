@@ -1,0 +1,244 @@
+<!-- return.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Return Item</title>
+    <link rel="stylesheet" href="../css/return.css">
+</head>
+<body>
+    <div class="container">
+        <div class="live-time" id="liveTime"></div>
+        <div class="title-container">
+            <img src="../media/apple-touch-icon.png" alt="Logo" class="logo">
+            <h2>BorrowHub</h2>
+        </div>
+        
+        <div class="buttons-container">
+            <a href="../dashboard.html" class="btn">Dashboard</a>
+            <a href="manageItem.html" class="btn">Manage Item</a>
+            <a href="borrow.html" class="btn">Borrow</a>
+            <a href="return.html" class="btn">Return</a>    
+            <a href="history.html" class="btn">History</a>
+        </div>
+        
+        <h3>Return Items</h3>
+        <div class="search-container">
+            <input type="text" id="returnSearch" placeholder="Search by item or borrower...">
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Borrower</th>
+                    <th>Contact</th>
+                    <th>BorrowDate</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="borrowedItemsList">
+                <!-- Borrowed items will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+// Replace the existing window.onload function with:
+window.onload = function() {
+    loadBorrowedItems();
+};
+
+function loadBorrowedItems() {
+    const borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+    const borrowedItemsList = document.getElementById('borrowedItemsList');
+    
+    // Clear existing items
+    borrowedItemsList.innerHTML = '';
+    
+    // Only show items with status "borrowed"
+    const activeItems = borrowedItems.filter(item => item.status === 'borrowed');
+    
+    activeItems.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.itemName}</td>
+            <td>${item.studentName}</td>
+            <td>${item.contactNumber}</td>
+            <td>${item.borrowDate}</td>
+            <td><button class="return-btn" data-id="${borrowedItems.indexOf(item)}" onclick="returnItem(this)">Return</button></td>
+        `;
+        borrowedItemsList.appendChild(row);
+    });
+}
+
+// Replace the existing returnItem function with:
+function returnItem(button) {
+    const index = button.getAttribute('data-id');
+    const borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+    const item = borrowedItems[index];
+    
+    if (!item) return;
+    
+    // Confirm return action
+    const action = confirm(`Are you sure you want to return ${item.quantity} unit(s) of ${item.itemName}? Click OK to confirm or Cancel to put it back.`);
+    
+    if (action) {
+        // Get current date and time in a formatted string
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = (now.getMonth() + 1).toString().padStart(2, '0');
+        const day = now.getDate().toString().padStart(2, '0');
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        
+        const currentDateTime = `${month}/${day}/${year} ${hours}:${minutes}:${seconds}`;
+        
+        // Update item status instead of removing it
+        borrowedItems[index].status = 'returned';
+        borrowedItems[index].returnDate = currentDateTime;
+        
+        // Update the inventory by adding back the quantity
+        const items = JSON.parse(localStorage.getItem('items')) || [];
+        const itemIndex = items.findIndex(i => i.name === item.itemName);
+        
+        if (itemIndex !== -1) {
+            items[itemIndex].quantity += item.quantity;
+        } else {
+            // If item no longer exists in inventory, add it back
+            items.push({
+                name: item.itemName,
+                quantity: item.quantity
+            });
+        }
+        
+        // Save changes
+        localStorage.setItem('borrowedItems', JSON.stringify(borrowedItems));
+        localStorage.setItem('items', JSON.stringify(items));
+        
+        // Refresh the display
+        loadBorrowedItems();
+        
+        // Update dashboard if possible
+        try {
+            if (window.parent && window.parent.updateDashboardStats) {
+                window.parent.updateDashboardStats();
+            }
+        } catch (e) {
+            // Handle cross-origin issues silently
+        }
+        
+        alert("Item returned successfully!");
+    }
+}
+
+            // Live clock function
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            // Get date components
+            const day = now.getDate().toString().padStart(2, '0');
+            const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-indexed
+            const year = now.getFullYear();
+            
+            const timeString = `${hours}:${minutes}:${seconds}`;
+            const dateString = `${month}/${day}/${year}`;
+            
+            document.getElementById('liveTime').innerHTML = `${dateString}<br>${timeString}`;
+        }
+
+        // Update clock immediately and then every second
+        updateClock();
+        setInterval(updateClock, 1000);
+
+                // Add search functionality for return page
+        document.getElementById('returnSearch').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#borrowedItemsList tr');
+            
+            rows.forEach(row => {
+                const itemName = row.cells[0].innerText.toLowerCase();
+                const borrowerName = row.cells[1].innerText.toLowerCase();
+                
+                if (itemName.includes(searchTerm) || borrowerName.includes(searchTerm)) {
+                    row.style.display = '';
+                    
+                    if (searchTerm.length > 0) {
+                        // Highlight item name if it matches
+                        if (itemName.includes(searchTerm)) {
+                            const highlightedText = row.cells[0].innerText.replace(
+                                new RegExp(`(${searchTerm})`, 'gi'),
+                                '<span class="highlight">$1</span>'
+                            );
+                            row.cells[0].innerHTML = highlightedText;
+                        } else {
+                            row.cells[0].innerHTML = row.cells[0].innerText;
+                        }
+                        
+                        // Highlight borrower name if it matches
+                        if (borrowerName.includes(searchTerm)) {
+                            const highlightedText = row.cells[1].innerText.replace(
+                                new RegExp(`(${searchTerm})`, 'gi'),
+                                '<span class="highlight">$1</span>'
+                            );
+                            row.cells[1].innerHTML = highlightedText;
+                        } else {
+                            row.cells[1].innerHTML = row.cells[1].innerText;
+                        }
+                    } else {
+                        // Reset highlighting
+                        row.cells[0].innerHTML = row.cells[0].innerText;
+                        row.cells[1].innerHTML = row.cells[1].innerText;
+                    }
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        // Update loadBorrowedItems to reset search when data is loaded
+        function loadBorrowedItems() {
+            const borrowedItems = JSON.parse(localStorage.getItem('borrowedItems')) || [];
+            const borrowedItemsList = document.getElementById('borrowedItemsList');
+            
+            // Clear existing items
+            borrowedItemsList.innerHTML = '';
+            
+            // Only show items with status "borrowed"
+            const activeItems = borrowedItems.filter(item => item.status === 'borrowed');
+            
+            activeItems.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${item.itemName}</td>
+                    <td>${item.studentName}</td>
+                    <td>${item.contactNumber}</td>
+                    <td>${item.borrowDate}</td>
+                    <td><button class="return-btn" data-id="${borrowedItems.indexOf(item)}" onclick="returnItem(this)">Return</button></td>
+                `;
+                borrowedItemsList.appendChild(row);
+            });
+            
+            // Clear search field and reset filters
+            if (document.getElementById('returnSearch')) {
+                document.getElementById('returnSearch').value = '';
+            }
+        }
+
+        //buttons transition
+        const currentPage = window.location.pathname.split('/').pop(); 
+const navLinks = document.querySelectorAll('.buttons-container a');
+
+navLinks.forEach(link => {
+    const linkPage = link.getAttribute('href').split('/').pop();
+    if (linkPage === currentPage) {
+        link.classList.add('active');
+    }
+});
+    </script>
+</body>
+</html>
